@@ -3,6 +3,7 @@ import json
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APITestCase
 
 from store.models import Book
@@ -12,9 +13,10 @@ from store.serializers import BookSerializer
 class BooksAPITestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create(username='test user')
-        self.book1 = Book.objects.create(name='Test book 1', price=10, author_name='Author 1')
-        self.book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2')
-        self.book3 = Book.objects.create(name='Test book Author 1', price=20, author_name='Author 3')
+        self.user2 = User.objects.create(username='not owner')
+        self.book1 = Book.objects.create(name='Test book 1', price=10, author_name='Author 1', owner=self.user)
+        self.book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2', owner=self.user)
+        self.book3 = Book.objects.create(name='Test book Author 1', price=20, author_name='Author 3', owner=self.user)
 
     def test_get(self):
         url = reverse('book-list')
@@ -104,3 +106,45 @@ class BooksAPITestCase(APITestCase):
         self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
         self.assertEqual(2, Book.objects.all().count())
 
+    def test_update_not_owner(self):
+        url = reverse('book-detail', args=(self.book1.id,))
+        data = {
+            'name': self.book1.name,
+            'price': 60,
+            'author_name': self.book1.author_name
+        }
+        json_data = json.dumps(data)
+
+        self.client.force_login(self.user2)
+
+        response = self.client.put(url, data=json_data, content_type='application/json')
+
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        expected_data = {
+            'detail': ErrorDetail(
+                string='You do not have permission to perform this action.',
+                code='permission_denied'
+            )
+        }
+
+        self.assertEqual(expected_data, response.data)
+        self.book1.refresh_from_db()
+        self.assertEqual(10, self.book1.price)
+
+    def test_delete_not_owner(self):
+        self.assertEqual(3, Book.objects.all().count())
+        url = reverse('book-detail', args=(self.book1.id,))
+
+        self.client.force_login(self.user2)
+        response = self.client.delete(url)
+
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(3, Book.objects.all().count())
+        expected_data = {
+            'detail': ErrorDetail(
+                string='You do not have permission to perform this action.',
+                code='permission_denied'
+            )
+        }
+
+        self.assertEqual(expected_data, response.data)

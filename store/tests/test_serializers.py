@@ -6,20 +6,22 @@ from store.serializers import BookSerializer
 
 class BookSerializerTestCase(TestCase):
     def test_ok(self):
-        book1 = Book.objects.create(name='Test book 1', price=10)
-        book2 = Book.objects.create(name='Test book 2', price=20)
+        book1 = Book.objects.create(name='Test book 1', price=10, author_name='Author 1')
+        book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2')
 
         data = BookSerializer([book1, book2], many=True).data
         expected_data = [
             {
                 'id': book1.id,
                 'name': 'Test book 1',
-                'price': '10.00'
+                'price': '10.00',
+                'author_name': 'Author 1'
             },
             {
                 'id': book2.id,
                 'name': 'Test book 2',
-                'price': '20.00'
+                'price': '20.00',
+                'author_name': 'Author 2'
             }
         ]
 

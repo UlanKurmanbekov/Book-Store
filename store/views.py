@@ -4,14 +4,14 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.viewsets import ModelViewSet
 
 from store.models import Book
-from store.permissions import IsOwnerOrReadOnly
+from store.permissions import IsOwnerOrStaffOrReadOnly
 from store.serializers import BookSerializer
 
 
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrStaffOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['price']
     search_fields = ['name', 'author_name']

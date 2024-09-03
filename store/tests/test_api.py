@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APITestCase
 
-from store.models import Book
+from store.models import Book, UserBookRelation
 from store.serializers import BookSerializer
 
 
@@ -166,3 +166,68 @@ class BooksAPITestCase(APITestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.book1.refresh_from_db()
         self.assertEqual(60, self.book1.price)
+
+
+class UserBookRelationTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create(username='user')
+        self.user2 = User.objects.create(username='user2')
+        self.book1 = Book.objects.create(name='Test book 1', price=10, author_name='Author 1', owner=self.user)
+        self.book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2')
+
+    def test_like_and_bookmark(self):
+        url = reverse('userbookrelation-detail', args=(self.book1.id,))
+
+        data = {
+            'like': True
+        }
+        json_data = json.dumps(data)
+
+        self.client.force_login(self.user)
+        response = self.client.patch(url, data=json_data, content_type='application/json')
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        relation = UserBookRelation.objects.get(user=self.user, book=self.book1)
+        self.assertTrue(relation.like)
+
+        data = {
+            'in_bookmarks': True
+        }
+        json_data = json.dumps(data)
+
+        response = self.client.patch(url, data=json_data, content_type='application/json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        relation = UserBookRelation.objects.get(user=self.user, book=self.book1)
+
+        self.assertTrue(relation.in_bookmarks)
+
+    def test_rate(self):
+        url = reverse('userbookrelation-detail', args=(self.book1.id,))
+
+        data = {
+            'rate': 3
+        }
+        json_data = json.dumps(data)
+
+        self.client.force_login(self.user)
+        response = self.client.patch(url, data=json_data, content_type='application/json')
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        relation = UserBookRelation.objects.get(user=self.user, book=self.book1)
+        self.assertEqual(3, relation.rate)
+
+    def test_rate_wrong(self):
+        url = reverse('userbookrelation-detail', args=(self.book1.id,))
+
+        data = {
+            'rate': 6
+        }
+        json_data = json.dumps(data)
+
+        self.client.force_login(self.user2)
+        response = self.client.patch(url, data=json_data, content_type='application/json')
+
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        relation = UserBookRelation.objects.get(user=self.user2, book=self.book1)
+        self.assertEqual(None, relation.rate)

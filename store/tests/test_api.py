@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.models import User
+from django.db.models import Count, Case, When
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
@@ -22,7 +23,12 @@ class BooksAPITestCase(APITestCase):
         url = reverse('book-list')
 
         response = self.client.get(url)
-        serializer_data = BookSerializer([self.book1, self.book2, self.book3], many=True).data
+
+        books = Book.objects.all().annotate(
+            likes_count=Count(Case(When(userbookrelation__like=True, then=1)))
+        )
+
+        serializer_data = BookSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -30,7 +36,12 @@ class BooksAPITestCase(APITestCase):
         url = reverse('book-list')
 
         response = self.client.get(url, data={'price': 20})
-        serializer_data = BookSerializer([self.book2, self.book3], many=True).data
+
+        books = Book.objects.filter(
+            id__in=[self.book2.id, self.book3.id]
+        ).annotate(likes_count=Count(Case(When(userbookrelation__like=True, then=1))))
+
+        serializer_data = BookSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -38,7 +49,12 @@ class BooksAPITestCase(APITestCase):
         url = reverse('book-list')
 
         response = self.client.get(url, data={'search': 'Author 1'})
-        serializer_data = BookSerializer([self.book1, self.book3], many=True).data
+
+        books = Book.objects.filter(
+            id__in=[self.book1.id, self.book3.id]
+        ).annotate(likes_count=Count(Case(When(userbookrelation__like=True, then=1))))
+
+        serializer_data = BookSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -46,7 +62,11 @@ class BooksAPITestCase(APITestCase):
         url = reverse('book-list')
 
         response = self.client.get(url, data={'ordering': '-price'})
-        serializer_data = BookSerializer([self.book2, self.book3, self.book1], many=True).data
+        books = Book.objects.all().annotate(
+            likes_count=Count(Case(When(userbookrelation__like=True, then=1)))
+        ).order_by('-price')
+
+        serializer_data = BookSerializer(books, many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -88,7 +108,10 @@ class BooksAPITestCase(APITestCase):
     def test_get_detail(self):
         url = reverse('book-detail', args=(self.book1.id,))
 
-        serializer_data = BookSerializer(self.book1).data
+        book = Book.objects.filter(id=self.book1.id).annotate(
+            likes_count=Count(Case(When(userbookrelation__like=True, then=1)))
+        ).first()
+        serializer_data = BookSerializer(book).data
 
         self.client.force_login(self.user)
         response = self.client.get(url)

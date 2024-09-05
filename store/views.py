@@ -1,4 +1,4 @@
-from django.db.models import Count, Case, When, Avg
+from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.mixins import UpdateModelMixin
@@ -13,9 +13,13 @@ from store.serializers import BookSerializer, UserBookRelationSerializer
 
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all().annotate(
-            likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')
-    )
+        likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
+        rating=Avg('userbookrelation__rate'),
+        discounted_price=ExpressionWrapper(
+            F('price') * (1 - F('discount') / 100.0),
+            output_field=DecimalField()
+        )
+    ).order_by('id')
     serializer_class = BookSerializer
     permission_classes = [IsOwnerOrStaffOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]

@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from store.models import Book, UserBookRelation
 from store.serializers import BookSerializer
+from store.utils import set_rating
 
 
 class BookSerializerTestCase(TestCase):
@@ -17,7 +18,9 @@ class BookSerializerTestCase(TestCase):
 
         UserBookRelation.objects.create(user=user1, book=book1, like=True, rate=5)
         UserBookRelation.objects.create(user=user2, book=book1, like=True, rate=5)
-        UserBookRelation.objects.create(user=user3, book=book1, like=True, rate=4)
+        user_book_3 = UserBookRelation.objects.create(user=user3, book=book1, like=True)
+        user_book_3.rate = 4
+        user_book_3.save()
 
         UserBookRelation.objects.create(user=user1, book=book2, like=True)
         UserBookRelation.objects.create(user=user2, book=book2, like=True, rate=4)

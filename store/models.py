@@ -12,6 +12,7 @@ class Book(models.Model):
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='owned_books')
     readers = models.ManyToManyField(User, through='UserBookRelation', related_name='books_read')
     discount = models.PositiveSmallIntegerField(default=0, blank=True, validators=DISCOUNT_VALIDATE)
+    rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, default=None)
 
     def __str__(self):
         return f'ID {self.id}: {self.name}'

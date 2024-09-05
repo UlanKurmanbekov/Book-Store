@@ -7,10 +7,11 @@ from store.models import Book, UserBookRelation
 class BookSerializer(ModelSerializer):
     likes_count = serializers.IntegerField(read_only=True)
     rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    discounted_price = serializers.DecimalField(max_digits=7, decimal_places=2, read_only=True)
 
     class Meta:
         model = Book
-        fields = ('id', 'name', 'price', 'author_name', 'likes_count', 'rating')
+        fields = ('id', 'name', 'price', 'discounted_price', 'author_name', 'likes_count', 'rating')
 
 
 class UserBookRelationSerializer(ModelSerializer):

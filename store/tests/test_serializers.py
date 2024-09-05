@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Count, Case, When, Avg
+from django.db.models import Count, Case, When, Avg, F, DecimalField, ExpressionWrapper
 from django.test import TestCase
 
 from store.models import Book, UserBookRelation
@@ -13,7 +13,7 @@ class BookSerializerTestCase(TestCase):
         user3 = User.objects.create(username='user3')
 
         book1 = Book.objects.create(name='Test book 1', price=10, author_name='Author 1')
-        book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2')
+        book2 = Book.objects.create(name='Test book 2', price=20, author_name='Author 2', discount=10)
 
         UserBookRelation.objects.create(user=user1, book=book1, like=True, rate=5)
         UserBookRelation.objects.create(user=user2, book=book1, like=True, rate=5)
@@ -25,7 +25,11 @@ class BookSerializerTestCase(TestCase):
 
         books = Book.objects.all().annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')
+            rating=Avg('userbookrelation__rate'),
+            discounted_price=ExpressionWrapper(
+                F('price') * (1 - F('discount') / 100.0),
+                output_field=DecimalField()
+            )
         ).order_by('id')
         data = BookSerializer(books, many=True).data
         expected_data = [
@@ -36,6 +40,7 @@ class BookSerializerTestCase(TestCase):
                 'author_name': 'Author 1',
                 'likes_count': 3,
                 'rating': '4.67',
+                'discounted_price': '10.00'
             },
             {
                 'id': book2.id,
@@ -44,6 +49,7 @@ class BookSerializerTestCase(TestCase):
                 'author_name': 'Author 2',
                 'likes_count': 2,
                 'rating': '3.00',
+                'discounted_price': '18.00'
             }
         ]
 

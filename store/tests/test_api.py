@@ -2,7 +2,7 @@ import json
 
 from django.contrib.auth.models import User
 from django.db import connection
-from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField
+from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField, Prefetch
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework import status
@@ -42,7 +42,10 @@ class BookAPITestCase(APITestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).order_by('id')
 
         serializer_data = BookSerializer(books, many=True).data
@@ -51,6 +54,7 @@ class BookAPITestCase(APITestCase):
         self.assertEqual(serializer_data[0]['rating'], '5.00')
         self.assertEqual(serializer_data[0]['likes_count'], 1)
         self.assertEqual(serializer_data[0]['discounted_price'], '9.90')
+        self.assertEqual(serializer_data[0]['owner_name'], 'test user')
 
     def test_get_filter(self):
         url = reverse('book-list')
@@ -63,7 +67,10 @@ class BookAPITestCase(APITestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).order_by('id')
 
         serializer_data = BookSerializer(books, many=True).data
@@ -81,7 +88,10 @@ class BookAPITestCase(APITestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).order_by('id')
 
         serializer_data = BookSerializer(books, many=True).data
@@ -98,7 +108,10 @@ class BookAPITestCase(APITestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).order_by('-price')
 
         serializer_data = BookSerializer(books, many=True).data
@@ -149,7 +162,10 @@ class BookAPITestCase(APITestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).first()
         serializer_data = BookSerializer(book).data
 

@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Count, Case, When, Avg, F, DecimalField, ExpressionWrapper
+from django.db.models import Count, Case, When, Avg, F, DecimalField, ExpressionWrapper, Prefetch
 from django.test import TestCase
 
 from store.models import Book, UserBookRelation
@@ -29,7 +29,10 @@ class BookSerializerTestCase(TestCase):
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
-            )
+            ),
+            owner_name=F('owner__username')
+        ).prefetch_related(
+            Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
         ).order_by('id')
         data = BookSerializer(books, many=True).data
         expected_data = [
@@ -65,7 +68,7 @@ class BookSerializerTestCase(TestCase):
                 'likes_count': 2,
                 'rating': '3.00',
                 'discounted_price': '18.00',
-                'owner_name': '',
+                'owner_name': None,
                 'readers': [
                     {
                         'first_name': 'Sultan',

@@ -1,7 +1,9 @@
 import json
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
@@ -30,7 +32,9 @@ class BookAPITestCase(APITestCase):
     def test_get(self):
         url = reverse('book-list')
 
-        response = self.client.get(url)
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(url)
+            self.assertEqual(2, len(queries))
 
         books = Book.objects.all().annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),

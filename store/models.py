@@ -35,3 +35,15 @@ class UserBookRelation(models.Model):
 
     def __str__(self):
         return f'{self.user.username}: {self.book.name} - rate {self.rate}'
+
+    def save(self, *args, **kwargs):
+        from store.utils import set_rating
+
+        creating = not self.pk
+        ord_rate = self.rate
+
+        super().save(*args, **kwargs)
+
+        new_rate = self.rate
+        if ord_rate != new_rate or creating:
+            set_rating(self.book)

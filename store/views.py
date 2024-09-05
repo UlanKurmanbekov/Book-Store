@@ -19,7 +19,7 @@ class BookViewSet(ModelViewSet):
             F('price') * (1 - F('discount') / 100.0),
             output_field=DecimalField()
         )
-    ).order_by('id')
+    ).select_related('owner').prefetch_related('readers').order_by('id')
     serializer_class = BookSerializer
     permission_classes = [IsOwnerOrStaffOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]

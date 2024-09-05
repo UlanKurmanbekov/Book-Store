@@ -25,7 +25,6 @@ class BookSerializerTestCase(TestCase):
 
         books = Book.objects.all().annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()

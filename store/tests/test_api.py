@@ -38,7 +38,7 @@ class BookAPITestCase(APITestCase):
 
         books = Book.objects.all().annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
+            
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
@@ -63,7 +63,7 @@ class BookAPITestCase(APITestCase):
 
         books = Book.objects.filter(id__in=[self.book2.id, self.book3.id]).annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
+            
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
@@ -84,7 +84,7 @@ class BookAPITestCase(APITestCase):
 
         books = Book.objects.filter(id__in=[self.book1.id, self.book3.id]).annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
+            
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
@@ -104,7 +104,7 @@ class BookAPITestCase(APITestCase):
         response = self.client.get(url, data={'ordering': '-price'})
         books = Book.objects.all().annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
+            
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()
@@ -158,7 +158,7 @@ class BookAPITestCase(APITestCase):
 
         book = Book.objects.filter(id=self.book1.id).annotate(
             likes_count=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'),
+            
             discounted_price=ExpressionWrapper(
                 F('price') * (1 - F('discount') / 100.0),
                 output_field=DecimalField()

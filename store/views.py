@@ -1,4 +1,5 @@
-from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField
+from django.contrib.auth.models import User
+from django.db.models import Count, Case, When, Avg, ExpressionWrapper, F, DecimalField, Prefetch
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.mixins import UpdateModelMixin
@@ -18,8 +19,12 @@ class BookViewSet(ModelViewSet):
         discounted_price=ExpressionWrapper(
             F('price') * (1 - F('discount') / 100.0),
             output_field=DecimalField()
-        )
-    ).select_related('owner').prefetch_related('readers').order_by('id')
+        ),
+        owner_name=F('owner__username')
+    ).prefetch_related(
+        Prefetch('readers', queryset=User.objects.only('first_name', 'last_name'))
+    ).order_by('id')
+
     serializer_class = BookSerializer
     permission_classes = [IsOwnerOrStaffOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
